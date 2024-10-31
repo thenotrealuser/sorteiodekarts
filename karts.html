@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sorteio de Karts</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #2d2d2d;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      width: 80%;
+      max-width: 800px;
+      background-color: #3e3e3e;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+    .checkboxes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    .checkbox-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .checkbox-item div {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: red;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .checkbox-item div.active {
+      background-color: green;
+    }
+    .buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+    .result {
+      margin-top: 20px;
+    }
+    #pilots-ul {
+      list-style: none;
+      padding: 0;
+    }
+    #pilots-ul li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+      background-color: #5a5a5a;
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+    #pilots-ul li span {
+      margin-right: 10px;
+    }
+    #pilots-ul li button {
+      background-color: #ff4c4c;
+      border: none;
+      border-radius: 50%;
+      color: #ffffff;
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Sorteio de Karts By :::Kimi Morgam:::</h1>
+    <div class="checkboxes"></div>
+    <div class="buttons">
+      <button onclick="adicionarPiloto()">Adicionar Piloto</button>
+      <button onclick="sortear()">Sortear</button>
+      <button onclick="salvarPDF()">Salvar PDF</button>
+      <button onclick="resetarKarts()">Resetar</button>
+    </div>
+    <input type="text" id="pilot-name" placeholder="Nome do Piloto" onkeyup="checkEnter(event)">
+    <ul id="pilots-ul"></ul>
+    <input type="file" id="file-input" accept=".txt" onchange="importarPilotos()">
+    <div id="file-name"></div>
+    <div class="result" id="result"></div>
+  </div>
+  <script>
+    var pilotos = [];
+    var kartsBloqueados = [];
+
+    // Função para embaralhar um array
+    function shuffleArray(array) {
+      for (var i = array.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+      }
+      return array;
+    }
+
+    // Função para preencher os karts de 1 a 101
+    window.onload = function() {
+      var checkboxesContainer = document.querySelector('.checkboxes');
+
+      for (var i = 1; i <= 101; i++) {
+        var checkboxItem = document.createElement('div');
+        checkboxItem.classList.add('checkbox-item');
+
+        var checkbox = document.createElement('div');
+        checkbox.classList.add('kart');
+        checkbox.textContent = i;
+        checkbox.dataset.kart = i;
+
+        checkbox.onclick = function() {
+          this.classList.toggle('active');
+        };
+
+        checkboxItem.appendChild(checkbox);
+        checkboxesContainer.appendChild(checkboxItem);
+      }
+    };
+
+    // Função para adicionar um piloto à lista
+    function adicionarPiloto() {
+      var pilotName = document.getElementById('pilot-name').value.trim();
+      if (pilotName) {
+        pilotos.push(pilotName);
+        var pilotsUl = document.getElementById('pilots-ul');
+        var li = document.createElement('li');
+
+        var span = document.createElement('span');
+        span.textContent = pilotName;
+
+        var removeButton = document.createElement('button');
+        removeButton.textContent = 'X';
+        removeButton.onclick = function() {
+          var index = pilotos.indexOf(pilotName);
+          if (index > -1) {
+            pilotos.splice(index, 1);
+            pilotsUl.removeChild(li);
+          }
+        };
+
+        li.appendChild(span);
+        li.appendChild(removeButton);
+        pilotsUl.appendChild(li);
+        document.getElementById('pilot-name').value = '';
+      } else {
+        alert('Por favor, insira o nome do piloto.');
+      }
+    }
+
+    // Função para detectar a tecla Enter no input do piloto
+    function checkEnter(event) {
+      if (event.key === 'Enter') {
+        adicionarPiloto();
+      }
+    }
+
+    // Função para importar pilotos de um arquivo .txt
+    function importarPilotos() {
+      var fileInput = document.getElementById('file-input');
+      var file = fileInput.files[0];
+      var fileNameDiv = document.getElementById('file-name');
+
+      if (file) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          pilotos = [];
+          var pilotsUl = document.getElementById('pilots-ul');
+          pilotsUl.innerHTML = '';
+          var content = e.target.result;
+          var lines = content.split('\n');
+          lines.forEach(function(line) {
+            var pilotName = line.trim();
+            if (pilotName) {
+              pilotos.push(pilotName);
+              var li = document.createElement('li');
+
+              var span = document.createElement('span');
+              span.textContent = pilotName;
+
+              var removeButton = document.createElement('button');
+              removeButton.textContent = 'X';
+              removeButton.onclick = function() {
+                var index = pilotos.indexOf(pilotName);
+                if (index > -1) {
+                  pilotos.splice(index, 1);
+                  pilotsUl.removeChild(li);
+                }
+              };
+
+              li.appendChild(span);
+              li.appendChild(removeButton);
+              pilotsUl.appendChild(li);
+            }
+          });
+          fileNameDiv.textContent = "Arquivo importado: " + file.name;
+        };
+        reader.readAsText(file);
+      } else {
+        alert('Por favor, selecione um arquivo .txt para importar.');
+      }
+    }
+
+    // Função para sortear e exibir a lista de karts e pilotos
+    function sortear() {
+      var kartsDisponiveis = [];
+      var checkboxes = document.querySelectorAll('.checkboxes .kart.active');
+      
+      checkboxes.forEach(function(checkbox) {
+        kartsDisponiveis.push(checkbox.dataset.kart);
+      });
+
+      console.log("Karts disponíveis:", kartsDisponiveis);
+      console.log("Pilotos:", pilotos);
+      
+      if (kartsDisponiveis.length === 0) {
+        alert('Por favor, selecione pelo menos um kart para sorteio.');
+        return;
+      }
+
+      if (pilotos.length === 0) {
+        alert('Por favor, cadastre pelo menos um piloto.');
+        return;
+      }
+
+      if (kartsDisponiveis.length < pilotos.length) {
+        alert('O número de karts disponíveis é menor que o número de pilotos. Selecione mais karts.');
+        return;
+      }
+
+      // Embaralhar a ordem dos karts disponíveis
+      kartsDisponiveis = shuffleArray(kartsDisponiveis);
+
+      // Exibir a lista de karts e pilotos selecionados na ordem dos pilotos
+      var listaSorteio = "Pilotos e Karts sorteados:\n";
+      for (var i = 0; i < kartsDisponiveis.length; i++) {
+        if (i < pilotos.length) {
+          listaSorteio += "Piloto: " + pilotos[i] + " - Kart " + kartsDisponiveis[i] + "\n";
+        } else {
+          listaSorteio += "Kart " + kartsDisponiveis[i] + " - Reserva\n";
+        }
+      }
+
+      // Exibir o resultado na div result
+      var resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '<pre style="color: #ffffff;">' + listaSorteio + '</pre>';
+    }
+
+    // Função para resetar todos os karts
+    function
+
+ resetarKarts() {
+      var checkboxes = document.querySelectorAll('.checkboxes .kart');
+      checkboxes.forEach(function(checkbox) {
+        checkbox.classList.remove('active');
+      });
+    }
+
+    // Função para salvar o resultado do sorteio em um PDF
+    function salvarPDF() {
+      var resultContent = document.getElementById('result').innerHTML;
+
+      // Criar um novo documento HTML para a impressão
+      var printWindow = window.open('', '', 'width=800,height=600');
+      printWindow.document.open();
+      printWindow.document.write('<!DOCTYPE html><html><head><title>Sorteio de Karts</title><style>body { font-family: \'Segoe UI\', Tahoma, Geneva, Verdana, sans-serif; color: #000; }</style></head><body>');
+      printWindow.document.write(resultContent);
+      printWindow.document.write('</body></html>');
+      printWindow.document.close();
+
+      // Usar a função `print()` para imprimir o documento HTML como PDF
+      printWindow.focus(); // Garantir que a janela esteja em foco
+      printWindow.print(); // Imprimir como PDF
+    }
+  </script>
+</body>
+</html>
